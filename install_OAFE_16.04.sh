@@ -102,26 +102,27 @@ __check_apt_lock() {
 }
 
 
-__enable_universe_repository() {
-    if [ "x$(grep -R universe /etc/apt/sources.list /etc/apt/sources.list.d/ | grep -v '#')" != "x" ]; then
-        # The universe repository is already enabled
-        return 0
-    fi
+#__enable_universe_repository() {
+#    if [ "x$(grep -R universe /etc/apt/sources.list /etc/apt/sources.list.d/ | grep -v '#')" != "x" ]; then
+#        # The universe repository is already enabled
+#        return 0
+#    fi
+#
+#    echodebug "Enabling the universe repository"
+#
+#    # Ubuntu versions higher than 12.04 do not live in the old repositories
+#    if [ $DISTRO_MAJOR_VERSION -gt 12 ] || ([ $DISTRO_MAJOR_VERSION -eq 12 ] && [ $DISTRO_MINOR_VERSION -gt 04 ]); then
+#        add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#    elif [ $DISTRO_MAJOR_VERSION -lt 11 ] && [ $DISTRO_MINOR_VERSION -lt 10 ]; then
+#        # Below Ubuntu 11.10, the -y flag to add-apt-repository is not supported
+#        add-apt-repository "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#    fi
+#
+#    add-apt-repository -y "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#
+#    return 0
+#}
 
-    echodebug "Enabling the universe repository"
-
-    # Ubuntu versions higher than 12.04 do not live in the old repositories
-    if [ $DISTRO_MAJOR_VERSION -gt 12 ] || ([ $DISTRO_MAJOR_VERSION -eq 12 ] && [ $DISTRO_MINOR_VERSION -gt 04 ]); then
-        add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-    elif [ $DISTRO_MAJOR_VERSION -lt 11 ] && [ $DISTRO_MINOR_VERSION -lt 10 ]; then
-        # Below Ubuntu 11.10, the -y flag to add-apt-repository is not supported
-        add-apt-repository "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-    fi
-
-    add-apt-repository -y "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-
-    return 0
-}
 
 __enable_docker_repository() {
   apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
@@ -174,8 +175,8 @@ install_ubuntu_16.04_deps() {
     echoinfo "Installing Python Software Properies ... "
     __apt_get_install_noinput software-properties-common >> $HOME/oafe-install.log 2>&1  || return 1
 
-    echoinfo "Enabling Universal Repository ... "
-    __enable_universe_repository >> $HOME/oafe-install.log 2>&1 || return 1
+#    echoinfo "Enabling Universal Repository ... "
+#    __enable_universe_repository >> $HOME/oafe-install.log 2>&1 || return 1
 
     echoinfo "Enabling Docker Repository ... "
     __enable_docker_repository >> $HOME/oafe-install.log 2>&1 || return 1
@@ -183,11 +184,11 @@ install_ubuntu_16.04_deps() {
 #    echoinfo "Adding Ubuntu Tweak Repository"
 #    add-apt-repository -y ppa:tualatrix/ppa  >> $HOME/oafe-install.log 2>&1 || return 1
 
-    echoinfo "Adding SIFT Repository: dev"
-    add-apt-repository -y ppa:sift/dev  >> $HOME/oafe-install.log 2>&1 || return 1
+#    echoinfo "Adding SIFT Repository: dev"
+#    add-apt-repository -y ppa:sift/dev  >> $HOME/oafe-install.log 2>&1 || return 1
 
-    echoinfo "Adding GIFT Ropository: Stable"
-    add-apt-repository -y ppa:gift/dev >> $HOME/oafe-install.log 2>&1 || return 1
+#    echoinfo "Adding GIFT Ropository: Stable"
+#    add-apt-repository -y ppa:gift/dev >> $HOME/oafe-install.log 2>&1 || return 1
 
     echoinfo "Adding Oracle VirtualBox Repository"
     echo deb http://download.virtualbox.org/virtualbox/debian xenial contrib | tee /etc/apt/sources.list.d/virtualbox.list >> $HOME/oafe-install.log 2>&1 || return 1
@@ -197,7 +198,7 @@ install_ubuntu_16.04_deps() {
     echoinfo "Adding Ntopng stable repository"
 	wget -O /home/oafe/apt-ntop-stable.deb http://apt-stable.ntop.org/16.04/all/apt-ntop-stable.deb  >> $HOME/oafe-install.log || return 1
     dpkg -i /home/oafe/apt-ntop-stable.deb
-    
+
     echoinfo "Enabling Draios repository for Sysdig"
     wget -q -O - https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public | apt-key add -   >> $HOME/oafe-install.log 2>&1 || return 1
     wget -q --output-document /etc/apt/sources.list.d/draios.list http://download.draios.com/stable/deb/draios.list  >> $HOME/oafe-install.log 2>&1 || return 1
@@ -223,7 +224,7 @@ install_ubuntu_16.04_deps() {
 
     echoinfo "Enabling the Cockpit Repository"
     add-apt-repository -y ppa:cockpit-project/cockpit
-    
+
     echoinfo "Enabling MongoDB Repository"
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6 >> $HOME/oafe-install.log 2>&1 || return 1
     echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-3.4.list >> $HOME/oafe-install.log 2>&1 || return 1
@@ -677,22 +678,15 @@ install_perl_modules() {
 }
 
 
-install_sift_files() {
-  # Checkout code from sift-files and put these files into place
-  echoinfo "OAFE VM: Installing SANS SIFT Files"
-	CDIR=$(pwd)
-	git clone --recursive https://github.com/sans-dfir/sift-files /tmp/sift-files >> $HOME/oafe-install.log 2>&1
-	cd /tmp/sift-files
-	bash install.sh >> $HOME/oafe-install.log 2>&1
-	cd $CDIR
-	rm -r -f /tmp/sift-files
-}
-
-#update_clamav_signatures() {
-    #if [ -e /usr/bin/freshclam ]; then
-    #  echoinfo "Updating ClamAV Signatures"
-    #  freshclam --quiet
-    #fi
+#install_sift_files() {
+#  # Checkout code from sift-files and put these files into place
+#  echoinfo "OAFE VM: Installing SANS SIFT Files"
+#	CDIR=$(pwd)
+#	git clone --recursive https://github.com/sans-dfir/sift-files /tmp/sift-files >> $HOME/oafe-install.log 2>&1
+#	cd /tmp/sift-files
+#	bash install.sh >> $HOME/oafe-install.log 2>&1
+#	cd $CDIR
+#	rm -r -f /tmp/sift-files
 #}
 
 configure_ubuntu() {
@@ -704,23 +698,18 @@ echoinfo "Creating oafe directory in /opt/oafe"
         chmod g+s /opt/oafe
     fi
 
-#echoinfo "Manual login prompt at boot"
-#	echoinfo "Type in OAFE password.  This will be the password for the root user"
-#	passwd root
-#	sh -c 'echo "greeter-show-manual-login=true" >> /etc/lightdm/lightdm.conf'
-
 echoinfo "Cloning Optum OAFE support files to /opt/oafe/OAFE"
     git clone https://github.com/rebaker501/OAFE.git /opt/oafe/OAFE
     chown -R $SUDO_USER:$SUDO_USER /opt/oafe/OAFE
     chmod -R 775 /opt/oafe/OAFE
     chmod -R g+s /opt/oafe/OAFE
-    
+
 echoinfo "Disable IPv6"
     echo "net.ipv6.conf.all.disable_ipv6 = 1
     net.ipv6.conf.default.disable_ipv6 = 1
     net.ipv6.conf.lo.disable_ipv6 = 1" | sudo tee /etc/sysctl.d/99-my-disable-ipv6.conf
     service procps reload
-    
+
 echoinfo "Setting OpenVPN to autostart and autorestart"
     cp -f /opt/oafe/OAFE/conf/openvpn/openvpn /etc/default/openvpn
     cp -f /opt/oafe/OAFE/conf/openvpn/openvpn@.service /lib/systemd/system/openvpn@.service
@@ -792,7 +781,7 @@ echoinfo "Installing Elasticsearch, Kibana, Logstash, and Graylog as services"
     cp -f /opt/oafe/OAFE/conf/logstash/ingest/start /opt/oafe/logstash/start  >> $HOME/oafe-install.log
     cp -f /opt/oafe/OAFE/conf/logstash/ingest/stop /opt/oafe/logstash/stop  >> $HOME/oafe-install.log
 /opt/oafe/logstash/bin/logstash-plugin install logstash-filter-translate >> $HOME/oafe-install.log 2>&1
-    
+
 echoinfo "Install Kibi"
 
 wget -O /opt/oafe/OAFE/Packages/kibi-community-standalone-5.2.2-beta-1-linux-x64.zip https://download.support.siren.solutions/kibi/community?file=kibi-community-standalone-5.2.2-beta-1-linux-x64.zip
@@ -849,7 +838,7 @@ echoinfo "Installing Maltrail"
         systemctl enable maltrail-sensor >> $HOME/oafe-install.log || return 1
 
 echoinfo "Installing Moloch DPI"
-	sleep 1m
+#	sleep 1m
 	systemctl start elasticsearch
 	wget -O /opt/oafe/OAFE/Packages/moloch_0.18.3-1_amd64.deb https://files.molo.ch/builds/ubuntu-16.04/moloch_0.18.3-1_amd64.deb
   if [ -f "/opt/oafe/OAFE/Packages/moloch_0.18.3-1_amd64.deb" ];
@@ -885,119 +874,107 @@ echoinfo "Enabling Google Rapid Response Installer"
         wget -O /opt/oafe/grr/install_google_rapid_response.sh https://raw.githubusercontent.com/google/grr/master/scripts/install_script_ubuntu.sh  >> $HOME/oafe-install.log || return 1
         chmod -c 775 /opt/oafe/grr/install_google_rapid_response.sh >> $HOME/oafe-install.log || return 1
 
-echoinfo "Install Kansa Files for Threat Hunting"
-    if [ ! -d /opt/oafe/kansa ]; then
-        mkdir -p /opt/oafe/kansa
-        chown $SUDO_USER:$SUDO_USER /opt/oafe/kansa
-        chmod -R 775 /opt/oafe/kansa
-        chmod -R g+s /opt/oafe/kansa
-    fi
-    cp -f /opt/oafe/OAFE/conf/logstash/ingest/logstash_kansa_ingest.conf /etc/logstash/conf.d/logstash_kansa_ingest.conf
-    git clone https://github.com/davehull/Kansa /opt/oafe/kansa
+#echoinfo "Install Kansa Files for Threat Hunting"
+#    if [ ! -d /opt/oafe/kansa ]; then
+#        mkdir -p /opt/oafe/kansa
+#        chown $SUDO_USER:$SUDO_USER /opt/oafe/kansa
+#        chmod -R 775 /opt/oafe/kansa
+#        chmod -R g+s /opt/oafe/kansa
+#    fi
+#    cp -f /opt/oafe/OAFE/conf/logstash/ingest/logstash_kansa_ingest.conf /etc/logstash/conf.d/logstash_kansa_ingest.conf
+#    git clone https://github.com/davehull/Kansa /opt/oafe/kansa
 
 echoinfo "Install Fast Incident Response Docker Build"
-    cd /opt/oafe/OAFE/FIR	
+    cd /opt/oafe/OAFE/FIR
     docker build -t fir .
 
-ecchoinfo "Install FAME"
+#ecchoinfo "Install FAME"
 
 
-echoinfo "Install Viper Framework"
-    git clone https://github.com/viper-framework/viper /opt/oafe/viper >> $HOME/oafe-install.log || return 1
-    chmod -R 775 /opt/oafe/viper >> $HOME/oafe-install.log || return 1
-    chown oafe:oafe /opt/oafe/viper >> $HOME/oafe-install.log || return 1
-    chmod g+s /opt/oafe/viper >> $HOME/oafe-install.log || return 1
-    cp -f /opt/oafe/OAFE/conf/systemd/viperweb.service /etc/systemd/system/viperweb.service >> $HOME/oafe-install.log || return 1
-    cp -f /opt/oafe/OAFE/conf/systemd/viper.service /etc/systemd/system/viper.service >> $HOME/oafe-install.log || return 1
-
-#echoinfo "Changing Ubuntu Launcher icons...Cmon, you don't really need the Amazon shopping app on here!!"
-#    chmod 777 /opt/oafe/OAFE/utilities/launcherctl.py
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -r -f libreoffice-writer.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -r -f libreoffice-calc.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -r -f org.gnome.Software.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -r -f ubuntu-amazon-default.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -a -f gnome-terminal.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -a -f chromium-browser.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -a -f virtualbox.desktop
-#    sudo -u oafe /opt/oafe/OAFE/utilities/launcherctl.py -a -f gedit.desktop
+#echoinfo "Install Viper Framework"
+#    git clone https://github.com/viper-framework/viper /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chmod -R 775 /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chown oafe:oafe /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chmod g+s /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    cp -f /opt/oafe/OAFE/conf/systemd/viperweb.service /etc/systemd/system/viperweb.service >> $HOME/oafe-install.log || return 1
+#    cp -f /opt/oafe/OAFE/conf/systemd/viper.service /etc/systemd/system/viper.service >> $HOME/oafe-install.log || return 1
 
 echoinfo "Enabling ntop netflow capture services"
     systemctl daemon-reload >> $HOME/oafe-install.log || return 1
     systemctl enable ntopng >> $HOME/oafe-install.log || return 1
-    
-echoinfo "Installing Cuckoo Sandbox"
-sleep 1m
-        if [ ! -d /opt/oafe/VMs ]; then
-		mkdir -p /opt/oafe/VMs
-		chown $SUDO_USER:$SUDO_USER /opt/oafe/VMs
-	 	chmod -R 775 /opt/oafe/VMs
-		chmod -R g+s /opt/oafe/VMs
-	fi
-        if [ ! -d /opt/oafe/cuckoodeps ]; then
-		mkdir -p /opt/oafe/cuckoodeps
-		chown $SUDO_USER:$SUDO_USER /opt/oafe/cuckoodeps
-	 	chmod -R 775 /opt/oafe/cuckoodeps
-		chmod -R g+s /opt/oafe/cuckoodeps
-	fi
-        if [ ! -d /var/log/cuckooweb ]; then
-		mkdir -p /var/log/cuckooweb
-		chown $SUDO_USER:$SUDO_USER /var/log/cuckooweb
-	 	chmod -R 775 /var/log/cuckooweb
-		chmod -R g+s /var/log/cuckooweb
-	fi
-        if [ ! -d /var/log/cuckoo ]; then
-		mkdir -p /var/log/cuckoo
-		chown $SUDO_USER:$SUDO_USER /var/log/cuckoo
-	 	chmod -R 775 /var/log/cuckoo
-		chmod -R g+s /var/log/cuckoo
-	fi
-        if [ ! -d /var/log/cuckooapi ]; then
-		mkdir -p /var/log/cuckooapi
-		chown $SUDO_USER:$SUDO_USER /var/log/cuckooapi
-	 	chmod -R 775 /var/log/cuckooapi
-		chmod -R g+s /var/log/cuckooapi
-	fi
-        if [ ! -d /opt/oafe/cuckoo ]; then
-        mkdir -p /opt/oafe/cuckoo
-        chown cuckoo:cuckoo /opt/oafe/cuckoo
-        chmod -R 775 /opt/oafe/cuckoo
-        chmod -R g+s /opt/oafe/cuckoo
-    fi
-        usermod -a -G vboxusers oafe
-        usermod -a -G vboxusers cuckoo
-        wget -O /opt/oafe/cuckoodeps/volatility-2.6.zip http://downloads.volatilityfoundation.org/releases/2.6/volatility-2.6.zip
-        cd /opt/oafe/cuckoodeps
-        unzip volatility-2.6.zip
-        mv -f volatility-master .. ; cd ../volatility-master && chmod +x vol.py
-        ln -f -s "${PWD}"/vol.py /usr/local/bin/vol.py
-        sysctl -w net.ipv4.ip_forward=1 >> $HOME/oafe-install.log || return 1
-        setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump >> $HOME/oafe-install.log || return 1
-        mysql -uroot -pchangeme! -e "CREATE DATABASE cuckoo" >> $HOME/oafe-install.log || return 1
-        mysql -uroot -pchangeme! -e "GRANT ALL PRIVILEGES ON *.* TO cuckoo@localhost IDENTIFIED BY 'changeme!'" >> $HOME/oafe-install.log || return 1
-        mysql -uroot -pchangeme! -e "FLUSH PRIVILEGES" >> $HOME/oafe-install.log || return 1
-        pip install -U cuckoo
+
+#echoinfo "Installing Cuckoo Sandbox"
+#sleep 1m
+#        if [ ! -d /opt/oafe/VMs ]; then
+#		mkdir -p /opt/oafe/VMs
+#		chown $SUDO_USER:$SUDO_USER /opt/oafe/VMs
+#	 	chmod -R 775 /opt/oafe/VMs
+#		chmod -R g+s /opt/oafe/VMs
+#	fi
+#        if [ ! -d /opt/oafe/cuckoodeps ]; then
+#		mkdir -p /opt/oafe/cuckoodeps
+#		chown $SUDO_USER:$SUDO_USER /opt/oafe/cuckoodeps
+#	 	chmod -R 775 /opt/oafe/cuckoodeps
+#		chmod -R g+s /opt/oafe/cuckoodeps
+#	fi
+#        if [ ! -d /var/log/cuckooweb ]; then
+#		mkdir -p /var/log/cuckooweb
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckooweb
+#	 	chmod -R 775 /var/log/cuckooweb
+#		chmod -R g+s /var/log/cuckooweb
+#	fi
+#        if [ ! -d /var/log/cuckoo ]; then
+#		mkdir -p /var/log/cuckoo
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckoo
+#	 	chmod -R 775 /var/log/cuckoo
+#		chmod -R g+s /var/log/cuckoo
+#	fi
+#        if [ ! -d /var/log/cuckooapi ]; then
+#		mkdir -p /var/log/cuckooapi
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckooapi
+#	 	chmod -R 775 /var/log/cuckooapi
+#		chmod -R g+s /var/log/cuckooapi
+#	fi
+#        if [ ! -d /opt/oafe/cuckoo ]; then
+#        mkdir -p /opt/oafe/cuckoo
+#        chown cuckoo:cuckoo /opt/oafe/cuckoo
+#        chmod -R 775 /opt/oafe/cuckoo
+#        chmod -R g+s /opt/oafe/cuckoo
+#    fi
+#        usermod -a -G vboxusers oafe
+#        usermod -a -G vboxusers cuckoo
+#        wget -O /opt/oafe/cuckoodeps/volatility-2.6.zip http://downloads.volatilityfoundation.org/releases/2.6/volatility-2.6.zip
+#        cd /opt/oafe/cuckoodeps
+#        unzip volatility-2.6.zip
+#        mv -f volatility-master .. ; cd ../volatility-master && chmod +x vol.py
+#        ln -f -s "${PWD}"/vol.py /usr/local/bin/vol.py
+#        sysctl -w net.ipv4.ip_forward=1 >> $HOME/oafe-install.log || return 1
+#        setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "CREATE DATABASE cuckoo" >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "GRANT ALL PRIVILEGES ON *.* TO cuckoo@localhost IDENTIFIED BY 'changeme!'" >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "FLUSH PRIVILEGES" >> $HOME/oafe-install.log || return 1
+#        pip install -U cuckoo
 #        if [ ! -d /opt/oafe/cuckoo/uwsgi ]; then
 #        	mkdir -p /opt/oafe/cuckoo/uwsgi
 #        	chown $SUDO_USER:$SUDO_USER /opt/oafe/cuckoo/uwsgi
 #        	chmod -R 775 /opt/oafe/cuckoo/uwsgi
 #        	chmod -R g+s /opt/oafe/cuckoo/uwsgi
 #    	fi
-        cuckoo --cwd /opt/oafe/cuckoo
-        wget - O /opt/oafe/cuckoodeps/sdk-tools-linux-3859397.zip https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip
-        vboxmanage hostonlyif create >> $HOME/oafe-install.log || return 1
+#        cuckoo --cwd /opt/oafe/cuckoo
+#        wget - O /opt/oafe/cuckoodeps/sdk-tools-linux-3859397.zip https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip#        vboxmanage hostonlyif create >> $HOME/oafe-install.log || return 1
         ip link set vboxnet0 up >> $HOME/oafe-install.log || return 1
 	    ip addr add 192.168.56.1/24 dev vboxnet0
         cp -f /opt/oafe/OAFE/conf/cuckoo/rules.v4 /etc/iptables/rules.v4 >> $HOME/oafe-install.log || return 1
 #        python /opt/oafe/cuckoo/utils/community.py -a -f -w >> $HOME/oafe-install.log || return 1
 systemctl daemon-reload >> $HOME/oafe-install.log || return 1
 
-echoinfo "OAFE VM: Creating Cases Folder"
-    if [ ! -d /cases ]; then
-	mkdir -p /cases
-	chown $SUDO_USER:$SUDO_USER /cases
-	chmod 775 /cases
-	chmod g+s /cases
-    fi
+#echoinfo "OAFE VM: Creating Cases Folder"
+#    if [ ! -d /cases ]; then
+#	mkdir -p /cases
+#	chown $SUDO_USER:$SUDO_USER /cases
+#	chmod 775 /cases
+#	chmod g+s /cases
+#    fi
 
 echoinfo "OAFE VM: Creating Mount Folders"
     for dir in usb vss shadow windows_mount e01 aff ewf bde iscsi
@@ -1041,47 +1018,11 @@ echoinfo "OAFE VM: Setting up symlinks to useful scripts"
 	ln -s /usr/bin/ewfmount /usr/bin/mount_ewf.py
     fi
 
-# Fix for https://github.com/sans-dfir/sift/issues/10
-    if [ ! -L /usr/bin/icat-sleuthkit ] && [ ! -e /usr/bin/icat-sleuthkit ]; then
-        ln -s /usr/bin/icat /usr/bin/icat-sleuthkit
-    fi
-
-# Fix for https://github.com/sans-dfir/sift/issues/23
-    if [ ! -L /usr/local/bin/l2t_process ] && [ ! -e /usr/local/bin/l2t_process ]; then
-        ln -s /usr/bin/l2t_process_old.pl /usr/local/bin/l2t_process
-    fi
-
     if [ ! -L /usr/local/etc/foremost.conf ]; then
         ln -s /etc/foremost.conf /usr/local/etc/foremost.conf
     fi
 
-# Fix for https://github.com/sans-dfir/sift/issues/41
-    if [ ! -L /usr/local/bin/mactime-sleuthkit ] && [ ! -e /usr/local/bin/mactime-sleuthkit ]; then
-        ln -s /usr/bin/mactime /usr/local/bin/mactime-sleuthkit
-    fi
-
     sed -i "s/APT::Periodic::Update-Package-Lists \"1\"/APT::Periodic::Update-Package-Lists \"0\"/g" /etc/apt/apt.conf.d/10periodic
-
-#echoinfo "Install LaikaBoss"
-#    if [ ! -d /opt/oafe/laikaboss ]; then
-#        mkdir -p /opt/oafe/laikaboss
-#        chown $SUDO_USER:$SUDO_USER /opt/oafe/laikaboss
-#        chmod -R 775 /opt/oafe/laikaboss
-#        chmod -R g+s /opt/oafe/laikaboss
-#    fi
-#    wget -O /opt/oafe/master.zip https://github.com/smarnach/pyexiftool/archive/master.zip  >> $HOME/oafe-install.log || return 1
-#    unzip /opt/oafe/master.zip -d /opt/oafe/  >> $HOME/oafe-install.log || return 1
-#    chmod -R 775 /opt/oafe/pyexiftool-master
-#    chown oafe:oafe /opt/oafe/pyexiftool-master/
-#    cd /opt/oafe/pyexiftool-master/
-#    python setup.py build  >> $HOME/oafe-install.log || return 1
-#    python setup.py install  >> $HOME/oafe-install.log || return 1
-#    git clone https://github.com/lmco/laikaboss /opt/oafe/laikaboss >> $HOME/oafe-install.log || return 1
-#    sudo chmod -R 775 /opt/oafe/laikaboss  >> $HOME/oafe-install.log || return 1
-#    chown oafe:oafe /opt/oafe/laikaboss
-#    cd /opt/oafe/laikaboss/
-#    python setup.py build  >> $HOME/oafe-install.log || return 1
-#    python setup.py install  >> $HOME/oafe-install.log || return 1
 
     echoinfo "Start IVRE Depedencies"
     #start IVRE web interface required services
@@ -1092,144 +1033,7 @@ echoinfo "OAFE VM: Setting up symlinks to useful scripts"
 
     #fixing permissions for systemd services, they should be set to 644
     sudo chmod 0644 /etc/systemd/system/kibi.service
-    sudo chmod 0644 /etc/systemd/system/viperweb.service
-    sudo chmod 0644 /etc/systemd/system/viper.service
 }
-
-# Global: Ubuntu SIFT VM Configuration Function
-# Works with 12.04 and 16.04 Versions
-configure_ubuntu_sift_vm() {
-
-  echoinfo "OAFE VM: Fixing Samba User"
-	# Make sure we replace the SIFT_USER template with our actual
-	# user so there is write permissions to samba.
-	sed -i "s/SIFT_USER/$SUDO_USER/g" /etc/samba/smb.conf
-
-  echoinfo "OAFE VM: Restarting Samba"
-	# Restart samba services
-	service smbd restart >> $HOME/oafe-install.log 2>&1
-	service nmbd restart >> $HOME/oafe-install.log 2>&1
-
-  echoinfo "OAFE VM: Setting Timezone to UTC" >> $HOME/oafe-install.log 2>&1
-  echo "America/New_York" > /etc/timezone >> $HOME/oafe-install.log 2>&1
-
-  echoinfo "OAFE VM: Fixing Regripper Files"
-	# Make sure to remove all ^M from regripper plugins
-	# Not sure why they are there in the first place ...
-	dos2unix -ascii /usr/share/regripper/* >> $HOME/oafe-install.log 2>&1
-
-  if [ -f /usr/share/regripper/plugins/usrclass-all ]; then
-    mv /usr/share/regripper/plugins/usrclass-all /usr/share/regripper/plugins/usrclass
-  fi
-
-  if [ -f /usr/share/regripper/plugins/ntuser-all ]; then
-    mv /usr/share/regripper/plugins/ntuser-all /usr/share/regripper/plugins/ntuser
-  fi
-
-  chmod 775 /usr/share/regripper/rip.pl
-  chmod -R 755 /usr/share/regripper/plugins
-
-  echoinfo "OAFE VM: Setting noclobber for $SUDO_USER"
-	if ! grep -i "set -o noclobber" $HOME/.bashrc > /dev/null 2>&1
-	then
-		echo "set -o noclobber" >> $HOME/.bashrc
-	fi
-	if ! grep -i "set -o noclobber" /root/.bashrc > /dev/null 2>&1
-	then
-		echo "set -o noclobber" >> /root/.bashrc
-	fi
-
-  echoinfo "OAFE VM: Configuring Aliases for $SUDO_USER and root"
-	if ! grep -i "alias mountwin" $HOME/.bash_aliases > /dev/null 2>&1
-	then
-		echo "alias mountwin='mount -o ro,loop,show_sys_files,streams_interface=windows'" >> $HOME/.bash_aliases
-	fi
-
-	# For SIFT VM, root is used frequently, set the alias there too.
-	if ! grep -i "alias mountwin" /root/.bash_aliases > /dev/null 2>&1
-	then
-		echo "alias mountwin='mount -o ro,loop,show_sys_files,streams_interface=windows'" >> /root/.bash_aliases
-	fi
-
-  echoinfo "OAFE VM: Sanity check for Desktop folder"
-        if [ ! -d $HOME/Desktop ]; then
-                sudo -u $SUDO_USER mkdir -p $HOME/Desktop
-        fi
-
-  echoinfo "OAFE VM: Setting up useful links on $SUDO_USER Desktop"
-	if [ ! -L $HOME/Desktop/cases ]; then
-		sudo -u $SUDO_USER ln -s /cases $HOME/Desktop/cases
-	fi
-
-	if [ ! -L $HOME/Desktop/mount_points ]; then
-		sudo -u $SUDO_USER ln -s /mnt $HOME/Desktop/mount_points
-	fi
-
-  echoinfo "OAFE VM: Cleaning up broken symlinks on $SUDO_USER Desktop"
-	# Clean up broken symlinks
-	find -L $HOME/Desktop -type l -delete
-
-  echoinfo "OAFE VM: Adding all OAFE Resources to $SUDO_USER Desktop"
-	for file in /usr/share/sift/resources/*.pdf
-	do
-		base=`basename $file`
-		if [ ! -L $HOME/Desktop/$base ]; then
-			sudo -u $SUDO_USER ln -s $file $HOME/Desktop/$base
-		fi
-	done
-
-  if [ ! -L /sbin/iscsiadm ]; then
-    ln -s -f /usr/bin/iscsiadm /sbin/iscsiadm
-  fi
-
-  if [ ! -L /usr/local/bin/rip.pl ]; then
-    ln -s -f /usr/share/regripper/rip.pl /usr/local/bin/rip.pl
-  fi
-
-  # Add extra device loop backs.
-  if ! grep "do mknod /dev/loop" /etc/rc.local > /dev/null 2>&1
-  then
-    echo 'for i in `seq 8 100`; do mknod /dev/loop$i b 7 $i; done' >> /etc/rc.local
-  fi
-}
-
-# 16.04 OAFE VM Configuration Function
-configure_ubuntu_16.04_sift_vm() {
-  sudo -u $SUDO_USER gsettings set com.canonical.Unity.Launcher favorites "['application://nautilus.desktop', 'application://gnome-terminal.desktop', 'application://firefox.desktop', 'application://gnome-screenshot.desktop', 'application://gcalctool.desktop', 'application://bless.desktop', 'application://autopsy.desktop', 'application://wireshark.desktop']" >> $HOME/oafe-install.log 2>&1
-
-  # Works in 12.04 and 16.04
-  sudo -u $SUDO_USER gsettings set org.gnome.desktop.background picture-uri file:///opt/oafe/OAFE/branding/OAFE_Background_1920_1080.jpg >> $HOME/oafe-install.log 2>&1
-
-  # Works in 16.04
-	if [ ! -d $HOME/.config/autostart ]; then
-		sudo -u $SUDO_USER mkdir -p $HOME/.config/autostart
-	fi
-
-  # Works in 16.04 too.
-	if [ ! -L $HOME/.config/autostart ]; then
-		sudo -u $SUDO_USER cp /usr/share/sift/other/gnome-terminal.desktop $HOME/.config/autostart
-	fi
-
-  # Works in 16.04 too
-	if [ ! -e /usr/share/unity-greeter/logo.png.ubuntu ]; then
-		sudo cp /usr/share/unity-greeter/logo.png /usr/share/unity-greeter/logo.png.ubuntu
-		sudo cp /usr/share/sift/images/login_logo.png /usr/share/unity-greeter/logo.png
-	fi
-
-  # Setup user favorites (only for 12.04)
-  sudo -u $SUDO_USER dconf write /desktop/unity/launcher/favorites "['nautilus.desktop', 'gnome-terminal.desktop', 'firefox.desktop', 'gnome-screenshot.desktop', 'gcalctool.desktop', 'bless.desktop', 'autopsy.desktop', 'wireshark.desktop']" >> $HOME/oafe-install.log 2>&1
-
-  # Setup the login background image
-  cp /opt/oafe/OAFE/branding/OAFE_Background_1920_1080.jpg /usr/share/backgrounds/warty-final-ubuntu.png
-
-  chown -R $SUDO_USER:$SUDO_USER $HOME
-}
-
-install_cuckoo_sandbox() {
-	echoinfo "Installing Cuckoo Sandbox"
-        
-}
-
 
 complete_message() {
     echo
@@ -1245,12 +1049,6 @@ complete_message() {
     echo "Documentation: http://oafe.readthedocs.org"
     echo
     echo "If you installed FIR you will need to change the IP address and hostname, as well as the config files for FIR to match the IP change"
-    echo
-}
-
-complete_message_skin() {
-    echo
-    echo "sudo reboot"
     echo
 }
 
@@ -1292,11 +1090,6 @@ if [ "$SUDO_USER" = "" ]; then
     exit 4
 fi
 
-#if [ ! "$(__check_apt_lock)" ]; then
-#    echo "APT Package Manager appears to be locked. Close all package managers."
-#    exit 15
-#fi
-
 while getopts ":hvcsiyudt" opt
 do
 case "${opt}" in
@@ -1325,13 +1118,6 @@ else
     ITYPE=$1
     shift
 fi
-
-if [ "$UPGRADE_ONLY" -eq 1 ]; then
-  echoinfo "SIFT Update"
-  echoinfo "All other options will be ignored!"
-  echoinfo "This could take a few minutes ..."
-  echo ""
-
   export DEBIAN_FRONTEND=noninteractive
 
   remove_bad_old_deps || echoerror "Removing Old Depedencies Failed"
@@ -1352,7 +1138,6 @@ if [ "$(echo $ITYPE | egrep '(dev|stable)')x" = "x" ]; then
     exit 1
 fi
 
-echoinfo "Welcome to the SIFT Bootstrap"
 echoinfo "This script will now proceed to configure your system."
 
 if [ "$YESTOALL" -eq 1 ]; then
@@ -1392,20 +1177,8 @@ fi
 
 # Configure for SIFT
 configure_ubuntu
-#We shouldnt update_clamav_signatures so quickly after the initial install, it causes an error because freshclam is locked.
-#update_clamav_signatures
-
-# Configure SIFT VM (if selected)
-if [ "$SKIN" -eq 1 ]; then
-    configure_ubuntu_sift_vm
-    configure_ubuntu_${VER}_sift_vm
-fi
 
 complete_message
-
-if [ "$SKIN" -eq 1 ]; then
-    complete_message_skin
-fi
 
 apt-get remove -y whoopsie
 end=$(date +%s.%N)
