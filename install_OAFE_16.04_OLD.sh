@@ -102,26 +102,26 @@ __check_apt_lock() {
 }
 
 
-__enable_universe_repository() {
-    if [ "x$(grep -R universe /etc/apt/sources.list /etc/apt/sources.list.d/ | grep -v '#')" != "x" ]; then
-        # The universe repository is already enabled
-        return 0
-    fi
-
-    echodebug "Enabling the universe repository"
-
-    # Ubuntu versions higher than 12.04 do not live in the old repositories
-    if [ $DISTRO_MAJOR_VERSION -gt 12 ] || ([ $DISTRO_MAJOR_VERSION -eq 12 ] && [ $DISTRO_MINOR_VERSION -gt 04 ]); then
-        add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-    elif [ $DISTRO_MAJOR_VERSION -lt 11 ] && [ $DISTRO_MINOR_VERSION -lt 10 ]; then
-        # Below Ubuntu 11.10, the -y flag to add-apt-repository is not supported
-        add-apt-repository "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-    fi
-
-    add-apt-repository -y "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
-
-    return 0
-}
+#__enable_universe_repository() {
+#    if [ "x$(grep -R universe /etc/apt/sources.list /etc/apt/sources.list.d/ | grep -v '#')" != "x" ]; then
+#        # The universe repository is already enabled
+#        return 0
+#    fi
+#
+#    echodebug "Enabling the universe repository"
+#
+#    # Ubuntu versions higher than 12.04 do not live in the old repositories
+#    if [ $DISTRO_MAJOR_VERSION -gt 12 ] || ([ $DISTRO_MAJOR_VERSION -eq 12 ] && [ $DISTRO_MINOR_VERSION -gt 04 ]); then
+#        add-apt-repository -y "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#    elif [ $DISTRO_MAJOR_VERSION -lt 11 ] && [ $DISTRO_MINOR_VERSION -lt 10 ]; then
+#        # Below Ubuntu 11.10, the -y flag to add-apt-repository is not supported
+#        add-apt-repository "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#    fi
+#
+#    add-apt-repository -y "deb http://old-releases.ubuntu.com/ubuntu $(lsb_release -sc) universe" || return 1
+#
+#    return 0
+#}
 
 
 __enable_docker_repository() {
@@ -175,11 +175,25 @@ install_ubuntu_16.04_deps() {
     echoinfo "Installing Python Software Properies ... "
     __apt_get_install_noinput software-properties-common >> $HOME/oafe-install.log 2>&1  || return 1
 
-    echoinfo "Enabling Universal Repository ... "
-    __enable_universe_repository >> $HOME/oafe-install.log 2>&1 || return 1
+#    echoinfo "Enabling Universal Repository ... "
+#    __enable_universe_repository >> $HOME/oafe-install.log 2>&1 || return 1
 
     echoinfo "Enabling Docker Repository ... "
     __enable_docker_repository >> $HOME/oafe-install.log 2>&1 || return 1
+
+#    echoinfo "Adding Ubuntu Tweak Repository"
+#    add-apt-repository -y ppa:tualatrix/ppa  >> $HOME/oafe-install.log 2>&1 || return 1
+
+#    echoinfo "Adding SIFT Repository: dev"
+#    add-apt-repository -y ppa:sift/dev  >> $HOME/oafe-install.log 2>&1 || return 1
+
+#    echoinfo "Adding GIFT Ropository: Stable"
+#    add-apt-repository -y ppa:gift/dev >> $HOME/oafe-install.log 2>&1 || return 1
+
+#    echoinfo "Adding Oracle VirtualBox Repository"
+#    echo deb http://download.virtualbox.org/virtualbox/debian xenial contrib | tee /etc/apt/sources.list.d/virtualbox.list >> $HOME/oafe-install.log 2>&1 || return 1
+#    wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add - >> $HOME/oafe-install.log 2>&1 || return 1
+#    wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | sudo apt-key add ->> $HOME/oafe-install.log 2>&1 || return 1
 
     echoinfo "Adding Ntopng stable repository"
 	wget -O /home/oafe/apt-ntop-stable.deb http://apt-stable.ntop.org/16.04/all/apt-ntop-stable.deb  >> $HOME/oafe-install.log || return 1
@@ -188,6 +202,9 @@ install_ubuntu_16.04_deps() {
     echoinfo "Enabling Draios repository for Sysdig"
     wget -q -O - https://s3.amazonaws.com/download.draios.com/DRAIOS-GPG-KEY.public | apt-key add -   >> $HOME/oafe-install.log 2>&1 || return 1
     wget -q --output-document /etc/apt/sources.list.d/draios.list http://download.draios.com/stable/deb/draios.list  >> $HOME/oafe-install.log 2>&1 || return 1
+
+#    echoinfo "Enabling the REMnux repository"
+#    add-apt-repository -y ppa:remnux/stable >> $HOME/oafe-install.log 2>&1 || return 1
 
     echoinfo "Enabling InetSim repository"
     wget -O - http://www.inetsim.org/inetsim-archive-signing-key.asc | apt-key add
@@ -220,6 +237,10 @@ install_ubuntu_16.04_deps() {
     echoinfo "Enabling the Node.js repository"
     apt-key adv --keyserver keyserver.ubuntu.com --recv 68576280 >> $HOME/oafe-install.log || return 1
     apt-add-repository -y 'deb https://deb.nodesource.com/node_4.x precise main' >> $HOME/oafe-install.log || return 1
+
+#echoinfo "Enabling Puppet repository"
+#        wget https://apt.puppetlabs.com/puppetlabs-release-trusty.deb  >> $HOME/oafe-install.log #|| return 1
+#        dpkg -i puppetlabs-release-trusty.deb
 
     #are we using beats still? If not lets remove it
     echoinfo "Enabling beats repository"
@@ -588,6 +609,12 @@ network-manager-openconnect
 apache2-utils
 mitmproxy"
 
+#    if [ "$@" = "dev" ]; then
+#        packages="$packages"
+#    elif [ "$@" = "stable" ]; then
+#        packages="$packages"
+#    fi
+
     for PACKAGE in $packages; do
         __apt_get_install_noinput $PACKAGE >> $HOME/oafe-install.log 2>&1
         ERROR=$?
@@ -604,6 +631,12 @@ mitmproxy"
 install_ubuntu_16.04_pip_packages() {
     pip_packages="alembic==0.8.0 analyzeMFT argparse beautifulsoup4==4.4.1 bitstring bottle cffi==1.2.1 colorama construct cryptography==1.0 cybox distorm distorm3 django dnspython docopt dpkt ecdsa enum34 Flask Flask-SQLAlchemy fluent-logger fuzzywuzzy HTTPReplay idna interruptingcow ioc_writer ipaddress itsdangerous ivre javatools Jinja2 jsbeautifier lxml maec Mako MarkupSafe mitmproxy MySQL-python ndg-httpsclient olefile oletools pbkdf2 pexcept pefile PrettyTable psycopg2 py-unrar2 py3compat pyasn1 pycparser pycrypto pydeep pyelftools pylzma pymisp pymongo pypdns pype32 pyOpenSSL pypssl python-dateutil python-editor python-evtx python-magic python-registry pyv8 pyvmomi r2pipe rarfile rekall requesocks requests request-cache scandir scikit-learn six stix stix-validator SQLAlchemy terminaltables timesketch tlslite-ng unicodecsv virtualenv virustotal-api wakeonlan Werkzeug xortool"
     pip_pre_packages="bitstring"
+
+#    if [ "$@" = "dev" ]; then
+#        pip_packages="$pip_packages"
+#    elif [ "$@" = "stable" ]; then
+#        pip_packages="$pip_packages"
+#    fi
 
     ERROR=0
     for PACKAGE in $pip_pre_packages; do
@@ -643,6 +676,18 @@ install_perl_modules() {
 	perl -MCPAN -e "install Digest::SHA" >> $HOME/oafe-install.log 2>&1
 	perl -MCPAN -e "install IO::Socket::SSL" >> $HOME/oafe-install.log 2>&1
 }
+
+
+#install_sift_files() {
+#  # Checkout code from sift-files and put these files into place
+#  echoinfo "OAFE VM: Installing SANS SIFT Files"
+#	CDIR=$(pwd)
+#	git clone --recursive https://github.com/sans-dfir/sift-files /tmp/sift-files >> $HOME/oafe-install.log 2>&1
+#	cd /tmp/sift-files
+#	bash install.sh >> $HOME/oafe-install.log 2>&1
+#	cd $CDIR
+#	rm -r -f /tmp/sift-files
+#}
 
 configure_ubuntu() {
 echoinfo "Creating oafe directory in /opt/oafe"
@@ -713,7 +758,9 @@ echoinfo "Installing Elasticsearch, Kibana, Logstash, and Graylog as services"
     cp -f /opt/oafe/OAFE/conf/logstash/ingest/bro-files.conf /etc/logstash/conf.d/bro-files.conf  >> $HOME/oafe-install.log
     cp -f /opt/oafe/OAFE/conf/logstash/ingest/bro-weird.conf /etc/logstash/conf.d/bro-weird.conf  >> $HOME/oafe-install.log
     cp -f /opt/oafe/OAFE/conf/logstash/ingest/sensor.conf /etc/logstash/conf.d/logstash_maltrail_sensor.conf  >> $HOME/oafe-install.log
-#moving over rc.local file
+#    cp -f /opt/oafe/OAFE/conf/elasticsearch/elasticsearch.in.sh /usr/share/elasticsearch/bin/ >> $HOME/oafe-install.log
+#    cp -f /opt/oafe/OAFE/conf/kibana/kibana.yml /opt/kibana/config/kibana.yml  >> $HOME/oafe-install.log || return 1
+    #moving over rc.local file
     cp -f /etc/rc.local /etc/rc.local.backup >> $HOME/oafe-install.log
     cp -f /opt/oafe/OAFE/etc/rc.local /etc/rc.local >> $HOME/oafe-install.log
     systemctl daemon-reload
@@ -827,13 +874,135 @@ echoinfo "Enabling Google Rapid Response Installer"
         wget -O /opt/oafe/grr/install_google_rapid_response.sh https://raw.githubusercontent.com/google/grr/master/scripts/install_script_ubuntu.sh  >> $HOME/oafe-install.log || return 1
         chmod -c 775 /opt/oafe/grr/install_google_rapid_response.sh >> $HOME/oafe-install.log || return 1
 
+#echoinfo "Install Kansa Files for Threat Hunting"
+#    if [ ! -d /opt/oafe/kansa ]; then
+#        mkdir -p /opt/oafe/kansa
+#        chown $SUDO_USER:$SUDO_USER /opt/oafe/kansa
+#        chmod -R 775 /opt/oafe/kansa
+#        chmod -R g+s /opt/oafe/kansa
+#    fi
+#    cp -f /opt/oafe/OAFE/conf/logstash/ingest/logstash_kansa_ingest.conf /etc/logstash/conf.d/logstash_kansa_ingest.conf
+#    git clone https://github.com/davehull/Kansa /opt/oafe/kansa
+
 echoinfo "Install Fast Incident Response Docker Build"
     cd /opt/oafe/OAFE/FIR
     docker build -t fir .
 
+#ecchoinfo "Install FAME"
+
+
+#echoinfo "Install Viper Framework"
+#    git clone https://github.com/viper-framework/viper /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chmod -R 775 /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chown oafe:oafe /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    chmod g+s /opt/oafe/viper >> $HOME/oafe-install.log || return 1
+#    cp -f /opt/oafe/OAFE/conf/systemd/viperweb.service /etc/systemd/system/viperweb.service >> $HOME/oafe-install.log || return 1
+#    cp -f /opt/oafe/OAFE/conf/systemd/viper.service /etc/systemd/system/viper.service >> $HOME/oafe-install.log || return 1
+
 echoinfo "Enabling ntop netflow capture services"
     systemctl daemon-reload >> $HOME/oafe-install.log || return 1
     systemctl enable ntopng >> $HOME/oafe-install.log || return 1
+
+#echoinfo "Installing Cuckoo Sandbox"
+#sleep 1m
+#        if [ ! -d /opt/oafe/VMs ]; then
+#		mkdir -p /opt/oafe/VMs
+#		chown $SUDO_USER:$SUDO_USER /opt/oafe/VMs
+#	 	chmod -R 775 /opt/oafe/VMs
+#		chmod -R g+s /opt/oafe/VMs
+#	fi
+#        if [ ! -d /opt/oafe/cuckoodeps ]; then
+#		mkdir -p /opt/oafe/cuckoodeps
+#		chown $SUDO_USER:$SUDO_USER /opt/oafe/cuckoodeps
+#	 	chmod -R 775 /opt/oafe/cuckoodeps
+#		chmod -R g+s /opt/oafe/cuckoodeps
+#	fi
+#        if [ ! -d /var/log/cuckooweb ]; then
+#		mkdir -p /var/log/cuckooweb
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckooweb
+#	 	chmod -R 775 /var/log/cuckooweb
+#		chmod -R g+s /var/log/cuckooweb
+#	fi
+#        if [ ! -d /var/log/cuckoo ]; then
+#		mkdir -p /var/log/cuckoo
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckoo
+#	 	chmod -R 775 /var/log/cuckoo
+#		chmod -R g+s /var/log/cuckoo
+#	fi
+#        if [ ! -d /var/log/cuckooapi ]; then
+#		mkdir -p /var/log/cuckooapi
+#		chown $SUDO_USER:$SUDO_USER /var/log/cuckooapi
+#	 	chmod -R 775 /var/log/cuckooapi
+#		chmod -R g+s /var/log/cuckooapi
+#	fi
+#        if [ ! -d /opt/oafe/cuckoo ]; then
+#        mkdir -p /opt/oafe/cuckoo
+#        chown cuckoo:cuckoo /opt/oafe/cuckoo
+#        chmod -R 775 /opt/oafe/cuckoo
+#        chmod -R g+s /opt/oafe/cuckoo
+#    fi
+#        usermod -a -G vboxusers oafe
+#        usermod -a -G vboxusers cuckoo
+#        wget -O /opt/oafe/cuckoodeps/volatility-2.6.zip http://downloads.volatilityfoundation.org/releases/2.6/volatility-2.6.zip
+#        cd /opt/oafe/cuckoodeps
+#        unzip volatility-2.6.zip
+#        mv -f volatility-master .. ; cd ../volatility-master && chmod +x vol.py
+#        ln -f -s "${PWD}"/vol.py /usr/local/bin/vol.py
+#        sysctl -w net.ipv4.ip_forward=1 >> $HOME/oafe-install.log || return 1
+#        setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "CREATE DATABASE cuckoo" >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "GRANT ALL PRIVILEGES ON *.* TO cuckoo@localhost IDENTIFIED BY 'changeme!'" >> $HOME/oafe-install.log || return 1
+#        mysql -uroot -pchangeme! -e "FLUSH PRIVILEGES" >> $HOME/oafe-install.log || return 1
+#        pip install -U cuckoo
+#        if [ ! -d /opt/oafe/cuckoo/uwsgi ]; then
+#        	mkdir -p /opt/oafe/cuckoo/uwsgi
+#        	chown $SUDO_USER:$SUDO_USER /opt/oafe/cuckoo/uwsgi
+#        	chmod -R 775 /opt/oafe/cuckoo/uwsgi
+#        	chmod -R g+s /opt/oafe/cuckoo/uwsgi
+#    	fi
+#        cuckoo --cwd /opt/oafe/cuckoo
+#        wget - O /opt/oafe/cuckoodeps/sdk-tools-linux-3859397.zip https://dl.google.com/android/repository/sdk-tools-linux-3859397.zip#        vboxmanage hostonlyif create >> $HOME/oafe-install.log || return 1
+#        ip link set vboxnet0 up >> $HOME/oafe-install.log || return 1
+#	    ip addr add 192.168.56.1/24 dev vboxnet0
+#       cp -f /opt/oafe/OAFE/conf/cuckoo/rules.v4 /etc/iptables/rules.v4 >> $HOME/oafe-install.log || return 1
+#        python /opt/oafe/cuckoo/utils/community.py -a -f -w >> $HOME/oafe-install.log || return 1
+#		systemctl daemon-reload >> $HOME/oafe-install.log || return 1
+
+#echoinfo "OAFE VM: Creating Cases Folder"
+#    if [ ! -d /cases ]; then
+#	mkdir -p /cases
+#	chown $SUDO_USER:$SUDO_USER /cases
+#	chmod 775 /cases
+#	chmod g+s /cases
+#    fi
+
+echoinfo "OAFE VM: Creating Mount Folders"
+#    for dir in usb vss shadow windows_mount e01 aff ewf bde iscsi
+#   do
+#	if [ ! -d /mnt/$dir ]; then
+#	    mkdir -p /mnt/$dir
+#	fi
+#    done
+
+#    for NUM in 1 2 3 4 5
+#    do
+#	if [ ! -d /mnt/windows_mount$NUM ]; then
+#		mkdir -p /mnt/windows_mount$NUM
+#	fi
+#	if [ ! -d /mnt/ewf_mount$NUM ]; then
+#		mkdir -p /mnt/ewf_mount$NUM
+#	fi
+#   done
+
+#    for NUM in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+#    do
+#	if [ ! -d /mnt/shadow/vss$NUM ]; then
+#		mkdir -p /mnt/shadow/vss$NUM
+#	fi
+#	if [ ! -d /mnt/shadow_mount/vss$NUM ]; then
+#		mkdir -p /mnt/shadow_mount/vss$NUM
+#	fi
+#   done
 
 echoinfo "OAFE VM: Setting up symlinks to useful scripts"
     if [ ! -L /usr/bin/vol.py ] && [ ! -e /usr/bin/vol.py ]; then
